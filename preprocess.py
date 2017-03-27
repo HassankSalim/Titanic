@@ -24,14 +24,15 @@ train_index, test_index = next(iter(kf))
 
 X_train, X_test = X.iloc[train_index], X.iloc[test_index]
 y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+main_frame = X
 
-age_means = X_train.groupby('Sex').mean().Age
+age_means = main_frame.groupby('Sex').mean().Age
 def fill_age(gender, age):
     if np.isnan(age):
         return age_means[gender]
     return age
 
-fare_means = X_train.groupby('Pclass').mean().Fare
+fare_means = main_frame.groupby('Pclass').mean().Fare
 def fill_fare(pclass, fare):
     if np.isnan(fare):
         return fare_means[pclass]
@@ -44,21 +45,21 @@ def specialProcessing(frame, main_frame):
     frame.fillna(main_frame.median())
     return frame
 
-specialProcessing(X_train, X_train)
+specialProcessing(X_train, main_frame)
 
 def divideDataset():
     return X.iloc[train_index], X.iloc[test_index], y.iloc[train_index], y.iloc[test_index]
 
 def encodeCatData(frame, feature_name):
-    lbl.fit(X_train[feature_name])
-    temp_for_ohe = lbl.transform(X_train[feature_name]).reshape(-1, 1)
+    lbl.fit(main_frame[feature_name])
+    temp_for_ohe = lbl.transform(main_frame[feature_name]).reshape(-1, 1)
     temp = lbl.transform(frame[feature_name]).reshape(-1, 1)
     ohe.fit(temp_for_ohe)
     temp = ohe.transform(temp).toarray()
     return temp
 
 def processCatData(frame):
-    specialProcessing(frame, X_train)
+    specialProcessing(frame, main_frame)
     out = []
     for i in categorical_features:
         out.append(encodeCatData(frame, i))
@@ -66,12 +67,12 @@ def processCatData(frame):
     return output
 
 def encodeNumData(frame, feature_name):
-    min_max_scaler.fit(X_train[feature_name])
+    min_max_scaler.fit(main_frame[feature_name])
     temp = min_max_scaler.transform(frame[feature_name]).reshape(-1, 1)
     return temp
 
 def processNumData(frame):
-    specialProcessing(frame, X_train)
+    specialProcessing(frame, main_frame)
     out = []
     for i in numical_features:
         out.append(encodeNumData(frame, i))
