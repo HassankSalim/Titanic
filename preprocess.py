@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from sklearn.cross_validation import StratifiedKFold
 
+
 ohe = OneHotEncoder()
 lbl = LabelEncoder()
 normalizer = Normalizer()
@@ -26,6 +27,7 @@ X_train, X_test = X.iloc[train_index], X.iloc[test_index]
 y_train, y_test = y.iloc[train_index], y.iloc[test_index]
 main_frame = X
 
+
 age_means = main_frame.groupby('Sex').mean().Age
 def fill_age(gender, age):
     if np.isnan(age):
@@ -33,6 +35,10 @@ def fill_age(gender, age):
     return age
 
 fare_means = main_frame.groupby('Pclass').mean().Fare
+
+def get_X_y():
+    return df[feature_list], df[target]
+
 def fill_fare(pclass, fare):
     if np.isnan(fare):
         return fare_means[pclass]
@@ -45,7 +51,7 @@ def specialProcessing(frame, main_frame):
     frame.fillna(main_frame.median())
     return frame
 
-specialProcessing(X_train, main_frame)
+specialProcessing(X, main_frame)
 
 def divideDataset():
     return X.iloc[train_index], X.iloc[test_index], y.iloc[train_index], y.iloc[test_index]
