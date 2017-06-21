@@ -9,7 +9,7 @@ lbl = LabelEncoder()
 normalizer = Normalizer()
 min_max_scaler = MinMaxScaler()
 
-df = pd.read_csv('train.csv')
+df = pd.read_csv('data/train.csv')
 
 feature_list = ['Pclass', 'Sex', 'Age', 'SibSp', 'Fare', 'Embarked']
 target = 'Survived'

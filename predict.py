@@ -7,7 +7,7 @@ from sys import argv
 from pickle import load
 warnings.filterwarnings("ignore")
 
-test = pd.read_csv('test.csv')
+test = pd.read_csv('data/test.csv')
 pickle_file_name = argv[1]
 output_csv_name = argv[2]
 
