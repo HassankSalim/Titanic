@@ -13,17 +13,22 @@ warnings.filterwarnings('ignore')
 #     pickle_file_name = argv[1]
 # ohe.transform(np.array(j).reshape(-1, 1)).toarray()
 
-X_train, X_test, y_train, y_test = divideDataset()
-train_set = np.hstack((processCatData(X_train), processNumData(X_train)))
-validation_set = np.hstack((processCatData(X_test), processNumData(X_test)))
-
-feature_size = train_set.shape[1]
-n_class = 2
 display_step = 1
 training_iters = 10
 
 ohe = OneHotEncoder()
 ohe.fit([[0], [1]])
+
+
+X_train, X_test, y_train, y_test = divideDataset()
+train_set = np.hstack((processCatData(X_train), processNumData(X_train)))
+validation_set = np.hstack((processCatData(X_test), processNumData(X_test)))
+
+y_test = ohe.transform(np.array(y_test).reshape(-1, 1)).toarray()
+validation_set = np.vstack(validation_set)
+
+feature_size = train_set.shape[1]
+n_class = 2
 
 Batch_Size  = 50
 def mNext():
@@ -77,11 +82,11 @@ with tf.Session() as  sess:
     sess.run(init_op)
     for count in range(training_iters):
         for x_batch, y_batch in mNext():
-            _, loss = sess.run([train_op, cost], feed_dict={X:x_batch, y:y_batch})
-            print('Training loss %.4f'%loss)
+            sess.run([train_op, cost], feed_dict={X:x_batch, y:y_batch})
         if count % display_step == 0:
-            accuracy_score = sess.run(acc, feed_dict={X:x_batch, y:y_batch})
-            print('Accuracy %.4f after iteration %d'%(accuracy_score, count))
-        print('Completed iteration')
+            accuracy_score, loss = sess.run([acc, cost], feed_dict={ X : validation_set, y : y_test })
+            print('Accuracy %.4f and Training loss %.4f after iteration %d'%(accuracy_score, loss, count))
+    print('Finished training model')
+    saver = tf.train.Saver()
 
 exit()
