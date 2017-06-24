@@ -29,6 +29,7 @@ def load_graph(file_name):
 
 graph = load_graph(file_name)
 X = graph.get_tensor_by_name('prefix/Placeholder:0')
+keep_dropout = graph.get_tensor_by_name('prefix/Placeholder_2:0')
 output = graph.get_tensor_by_name('prefix/final_output:0')
 
 test = pd.read_csv('data/test.csv')
@@ -38,7 +39,7 @@ processed_test_data = np.hstack((processCatData(test), processNumData(test)))
 processed_test_data = np.vstack(processed_test_data)
 
 with tf.Session(graph=graph) as sess:
-    pred = sess.run(output, feed_dict={ X : processed_test_data })
+    pred = sess.run(output, feed_dict={ X : processed_test_data, keep_dropout:1.0 })
 
 pred = pd.DataFrame(pred)
 pred.columns = ['Survived']

@@ -1,2 +1,2 @@
-model_checkpoint_path: "more_lays_model.ckpt"
-all_model_checkpoint_paths: "more_lays_model.ckpt"
+model_checkpoint_path: "15_7_3k_model.ckpt"
+all_model_checkpoint_paths: "15_7_3k_model.ckpt"

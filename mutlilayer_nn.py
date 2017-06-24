@@ -1,6 +1,6 @@
 from __future__ import division
 import tensorflow as tf
-from preprocess import processCatData, processNumData, divideDataset
+from preprocess import processCatData, processNumData, divideDataset, get_X_y
 import numpy as np
 import warnings
 from sklearn.preprocessing import OneHotEncoder
@@ -18,14 +18,14 @@ else:
     model_name = argv[1]
 
 display_step = 1
-training_iters = 2000
-is_full_dataset = False
+is_full_dataset = True # False
 ohe = OneHotEncoder()
 ohe.fit([[0], [1]])
 
 
 X_train, X_test, y_train, y_test = divideDataset()
-# X, y = get_X_y()
+if is_full_dataset:
+    X_train, y_train = get_X_y()
 train_set = np.hstack((processCatData(X_train), processNumData(X_train)))
 validation_set = np.hstack((processCatData(X_test), processNumData(X_test)))
 
@@ -33,12 +33,14 @@ y_test = ohe.transform(np.array(y_test).reshape(-1, 1)).toarray()
 validation_set = np.vstack(validation_set)
 
 feature_size = train_set.shape[1]
-h1_size = 8
-h2_size = 5
+training_iters = 4000
+h1_size = 15
+h2_size = 7
 n_class = 2
+dropout = 0.75
 cost_count_list = []
 
-Batch_Size  = 45
+Batch_Size  = 32
 def mNext():
     zipped_train = zip(train_set, y_train)
     np.random.shuffle(zipped_train)
@@ -59,7 +61,7 @@ print(feature_size)
 
 def computeStd(fan_in, fan_out):
     fan_avg = (fan_in + fan_out) / 2
-    return sqrt(2 / fan_avg)
+    return sqrt(3 / fan_avg)
 
 # Function to freeze model (Thnks to meta-ai)
 def freeze_graph(model_folder, acc):
@@ -95,6 +97,7 @@ def freeze_graph(model_folder, acc):
 # Creating network
 X = tf.placeholder(tf.float32, shape=[None, feature_size])
 y = tf.placeholder(tf.float32, shape=[None, n_class])
+keep_dropout  = tf.placeholder(tf.float32)
 
 weights = {
     'w1':tf.Variable(tf.truncated_normal(shape=[feature_size, h1_size], stddev = computeStd(feature_size, h1_size))),
@@ -108,16 +111,17 @@ bias = {
     'out':tf.Variable(tf.truncated_normal(shape=[n_class], stddev = computeStd(h2_size, n_class)))
 }
 
-def feedfwd():
+def feedfwd(dropout):
     a1 = tf.add(tf.matmul(X, weights['w1']), bias['b1'])
     z1 = tf.nn.relu(a1)
     a2 = tf.add(tf.matmul(z1, weights['w2']), bias['b2'])
     z2 = tf.nn.relu(a2)
+    z2 = tf.nn.dropout(z2, dropout)
     a3 = tf.add(tf.matmul(z2, weights['out']), bias['out'])
     z3 = tf.nn.relu(a3)
     return z3
 
-pred = feedfwd()
+pred = feedfwd(keep_dropout)
 output = tf.argmax(pred, 1, name='final_output')
 cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=pred))
 train_op = tf.train.GradientDescentOptimizer(learning_rate=0.01).minimize(cost)
@@ -130,9 +134,9 @@ with tf.Session() as  sess:
     sess.run(init_op)
     for count in range(training_iters):
         for x_batch, y_batch in mNext():
-            sess.run([train_op, cost], feed_dict={X:x_batch, y:y_batch})
-        if count % display_step == 0 and not is_full_dataset:
-            accuracy_score, loss = sess.run([acc, cost], feed_dict={X:x_batch, y:y_batch}) # feed_dict={ X : validation_set, y : y_test }
+            sess.run([train_op, cost], feed_dict={ X:x_batch, y:y_batch, keep_dropout:dropout} )
+        if count % display_step == 0:
+            accuracy_score, loss = sess.run([acc, cost], feed_dict={ X:x_batch, y:y_batch, keep_dropout:1.0 } ) # feed_dict={ X : validation_set, y : y_test }
             print('Accuracy %.4f and Training loss %.4f after iteration %d'%(accuracy_score, loss, count))
             cost_count_list.append((loss, count))
 
