@@ -33,12 +33,12 @@ y_test = ohe.transform(np.array(y_test).reshape(-1, 1)).toarray()
 validation_set = np.vstack(validation_set)
 
 feature_size = train_set.shape[1]
-h1_size = 7
+h1_size = 8
 h2_size = 5
 n_class = 2
 cost_count_list = []
 
-Batch_Size  = 32
+Batch_Size  = 45
 def mNext():
     zipped_train = zip(train_set, y_train)
     np.random.shuffle(zipped_train)
@@ -120,7 +120,7 @@ def feedfwd():
 pred = feedfwd()
 output = tf.argmax(pred, 1, name='final_output')
 cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=pred))
-train_op = tf.train.AdamOptimizer().minimize(cost)
+train_op = tf.train.GradientDescentOptimizer(learning_rate=0.01).minimize(cost)
 corret_pred = tf.equal(output, tf.argmax(y, 1))
 acc = tf.reduce_mean(tf.cast(corret_pred, tf.float32))
 acc_for_filename = 0
@@ -132,7 +132,7 @@ with tf.Session() as  sess:
         for x_batch, y_batch in mNext():
             sess.run([train_op, cost], feed_dict={X:x_batch, y:y_batch})
         if count % display_step == 0 and not is_full_dataset:
-            accuracy_score, loss = sess.run([acc, cost], feed_dict={ X : validation_set, y : y_test })
+            accuracy_score, loss = sess.run([acc, cost], feed_dict={X:x_batch, y:y_batch}) # feed_dict={ X : validation_set, y : y_test }
             print('Accuracy %.4f and Training loss %.4f after iteration %d'%(accuracy_score, loss, count))
             cost_count_list.append((loss, count))
 
